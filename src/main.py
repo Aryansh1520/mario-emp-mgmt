@@ -82,7 +82,7 @@ class ModernMainWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Mariomed Payslip Generator")
-        self.setMinimumSize(1200, 800)
+
         self.setStyleSheet(self.get_main_stylesheet())
 
         # Ensure database
@@ -158,28 +158,33 @@ def main():
     app = QApplication(sys.argv)
 
     # --- App-level properties ---
-    app.setApplicationName("Mariomed Payslip Generator")
+    app.setApplicationName("Mariomed Employee Management")
     app.setApplicationVersion("1.0")
 
-    # --- Icon path ---
-    icon_path = ASSETS_DIR / "logo.png"
+    # --- Icon path (works in dev + exe) ---
+    if hasattr(sys, "_MEIPASS"):
+        icon_path = Path(sys._MEIPASS) / "assets" / "logo.ico"
+    else:
+        icon_path = Path(__file__).parent.parent / "assets" / "logo.ico"
+
     if not icon_path.exists():
         print("Warning: Icon not found:", icon_path)
 
-    # Set icon globally for app (taskbar)
-    if icon_path.exists():
-        app.setWindowIcon(QIcon(str(icon_path)))
-        QGuiApplication.setWindowIcon(QIcon(str(icon_path)))  # ensures taskbar/dock icon
+    # Set icon globally for app (taskbar + dialogs)
+    app.setWindowIcon(QIcon(str(icon_path)))
 
     # --- Main Window ---
     window = ModernMainWindow()
-    window.setWindowTitle("Mariomed Payslip Generator")
+    window.setWindowTitle("Mariomed Employee Management")
+    window.setWindowIcon(QIcon(str(icon_path)))  # titlebar icon
 
-    # Also set window-level icon (title bar)
-    if icon_path.exists():
-        window.setWindowIcon(QIcon(str(icon_path)))
+    # Optional: set a safe minimum size
+    screen_size = QApplication.primaryScreen().availableGeometry().size()
+    window.setMinimumSize(int(screen_size.width() * 0.5), int(screen_size.height() * 0.5))
 
-    window.show()
+    # Show maximized AFTER window and layout are fully initialized
+    window.showMaximized()
+
     sys.exit(app.exec())
 
 if __name__ == "__main__":
