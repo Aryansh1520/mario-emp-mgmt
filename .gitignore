@@ -1,0 +1,21 @@
+# Ignore SQLite database
+data/employees.db
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.env
+
+# PyInstaller output
+dist/
+build/
+*.spec
+
+# OS files
+.DS_Store
+Thumbs.db
