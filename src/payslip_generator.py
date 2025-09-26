@@ -203,12 +203,17 @@ class ModernPayslipGenerator:
 
         # --- LOGO ---
         logo_flowable = ""
-        logo_path = Path(__file__).parent.parent / "assets" / "logo.png"
+    # --- LOGO ---
+        if hasattr(sys, "_MEIPASS"):
+            logo_path = Path(sys._MEIPASS) / "assets" / "logo.png"
+        else:
+            logo_path = Path(__file__).parent.parent / "assets" / "logo.png"
+
         if logo_path.exists():
             try:
                 logo = Image(str(logo_path))
-                logo.drawHeight = 15 * mm   # smaller logo
-                logo.drawWidth = 15 * mm
+                logo.drawHeight = 25 * mm   # smaller logo
+                logo.drawWidth = 25 * mm
                 logo.hAlign = 'LEFT'
                 logo_flowable = logo
             except Exception as e:
@@ -217,28 +222,38 @@ class ModernPayslipGenerator:
         # --- COMPANY INFO ---
         company_info = [
             Paragraph("Mariomed Pharmaceuticals", self.company_title_style),
-            Paragraph("Private Limited", self.company_subtitle_style),
-            Paragraph("123, Industrial Area, City, State, PIN 123456", self.company_subtitle_style),
+            Paragraph("S1, Ground Floor, Sonam Annapoorna CHS", self.company_subtitle_style),
+Paragraph("New Golden nest, Phase-7,Bhayandar (East)", self.company_subtitle_style),
+Paragraph("THANE - 401105", self.company_subtitle_style)
         ]
 
         # --- MAIN HEADER TABLE ---
         # Put logo and text side-by-side in the same row
         header_table = Table(
             [[logo_flowable, company_info]],
-            colWidths=[20 * mm, 170 * mm]
+            colWidths=[30 * mm, 170 * mm]
         )
 
         header_table.setStyle(TableStyle([
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('LEFTPADDING', (0, 0), (-1, -1), 15),
             ('RIGHTPADDING', (0, 0), (-1, -1), 0),
             ('TOPPADDING', (0, 0), (-1, -1), 0),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
         ]))
 
         return header_table
+    
+
     def create_employee_summary_card(self, emp, fin , pay_period: str):
-        """Create the employee summary card with net pay highlight"""
+        """Create the employee summary card with net pay highlight aligned perfectly"""
+
+        # Total width to match earnings + deductions table
+        total_width = 530  # points
+
+        # Split into two columns: left = employee details, right = net pay
+        left_width = total_width * 0.55   # ~55% for details
+        right_width = total_width - left_width  # remaining for Net Pay
 
         # Left column - Employee details
         emp_details_data = [
@@ -255,7 +270,7 @@ class ModernPayslipGenerator:
             [Paragraph(f": {emp.get('pan', 'N/A')}", self.value_style)],
         ]
 
-        emp_details_table = Table(emp_details_data, colWidths=[90*mm])
+        emp_details_table = Table(emp_details_data, colWidths=[left_width])
         emp_details_table.setStyle(TableStyle([
             ('VALIGN', (0,0), (-1,-1), 'TOP'),
             ('LEFTPADDING', (0,0), (-1,-1), 15),
@@ -264,32 +279,29 @@ class ModernPayslipGenerator:
             ('BOTTOMPADDING', (0,0), (-1,-1), 2),
         ]))
 
-        # Center column - Net Pay (large highlight)
+        # Right column - Net Pay (large highlight)
         net_pay_data = [
             [Paragraph(self.format_currency(fin['net']), self.net_pay_amount_style)],
             [Paragraph("Employee Net Pay", self.net_pay_label_style)]
         ]
 
-        net_pay_table = Table(net_pay_data, colWidths=[70*mm])
+        net_pay_table = Table(net_pay_data, colWidths=[right_width])
         net_pay_table.setStyle(TableStyle([
             ('BACKGROUND', (0,0), (-1,-1), self.colors['background']),
             ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ('VALIGN', (0,0), (-1,-1), 'TOP'),  # align to top so top edges match
             ('BOTTOMPADDING', (0,0), (-1,-1), 20),
             ('BOX', (0,0), (-1,-1), 1, self.colors['border']),
         ]))
 
-        # Right column - Work days info
-
-        # Main container
-        main_data = [[emp_details_table, net_pay_table]]
-
-        main_table = Table(main_data, colWidths=[90*mm, 70*mm, 70*mm])
+        # Main container: just two columns
+        main_table = Table([[emp_details_table, net_pay_table]],
+                        colWidths=[left_width, right_width])
         main_table.setStyle(TableStyle([
             ('VALIGN', (0,0), (-1,-1), 'TOP'),
             ('BACKGROUND', (0,0), (-1,-1), self.colors['card']),
             ('BOX', (0,0), (-1,-1), 1, self.colors['border']),
-            ('TOPPADDING', (0,0), (-1,-1), 10),
+            ('TOPPADDING', (0,0), (-1,-1), 0),
             ('BOTTOMPADDING', (0,0), (-1,-1), 10),
             ('LEFTPADDING', (0,0), (-1,-1), 0),
             ('RIGHTPADDING', (0,0), (-1,-1), 0),
@@ -299,6 +311,8 @@ class ModernPayslipGenerator:
 
     def create_earnings_deductions_section(self, fin):
         """Create earnings and deductions section"""
+        from reportlab.platypus import Paragraph, Table, TableStyle
+
         # Earnings data
         earnings_data = [
             [Paragraph("EARNINGS", self.earnings_header_style), Paragraph("AMOUNT", self.earnings_header_style)],
@@ -306,53 +320,58 @@ class ModernPayslipGenerator:
             [Paragraph("House Rent Allowance", self.label_style), Paragraph(self.format_currency(fin["hra"]), self.amount_style)],
             [Paragraph("LTA", self.label_style), Paragraph(self.format_currency(fin["LTA"]), self.amount_style)],
             [Paragraph("Special Allowance", self.label_style), Paragraph(self.format_currency(fin["special_allowance"]), self.amount_style)],
-            ["", ""],
             [Paragraph("Gross Earnings", self.earnings_header_style), Paragraph(self.format_currency(fin["gross"]), self.earnings_header_style)],
         ]
-
-        earnings_table = Table(earnings_data, colWidths=[70*mm, 30*mm])
-        earnings_table.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (1,0), self.colors['background']),
-            ('BACKGROUND', (0,-1), (1,-1), self.colors['background']),
-            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('LEFTPADDING', (0,0), (-1,-1), 15),
-            ('RIGHTPADDING', (0,0), (-1,-1), 15),
-            ('TOPPADDING', (0,0), (-1,-1), 8),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 8),
-            ('BOX', (0,0), (-1,-1), 1, self.colors['border']),
-            ('INNERGRID', (0,0), (-1,-1), 0.5, self.colors['border']),
-        ]))
 
         # Deductions data
         deductions_data = [
             [Paragraph("DEDUCTIONS", self.earnings_header_style), Paragraph("AMOUNT", self.earnings_header_style)],
             [Paragraph("Income Tax", self.label_style), Paragraph(self.format_currency(fin["income_tax"]), self.amount_style)],
-            ["", ""],
-            ["", ""],
-            ["", ""],
-            ["", ""],
+            [Paragraph("", self.label_style), Paragraph("", self.amount_style)],
+            [Paragraph("", self.label_style), Paragraph("", self.amount_style)],
+            [Paragraph("", self.label_style), Paragraph("", self.amount_style)],
             [Paragraph("Total Deductions", self.earnings_header_style), Paragraph(self.format_currency(fin["income_tax"]), self.earnings_header_style)],
         ]
 
-        deductions_table = Table(deductions_data, colWidths=[70*mm, 30*mm])
-        deductions_table.setStyle(TableStyle([
+        # Ensure both tables have same number of rows
+        max_rows = max(len(earnings_data), len(deductions_data))
+        while len(earnings_data) < max_rows:
+            earnings_data.insert(-1, [Paragraph("", self.label_style), Paragraph("", self.amount_style)])
+        while len(deductions_data) < max_rows:
+            deductions_data.insert(-1, [Paragraph("", self.label_style), Paragraph("", self.amount_style)])
+
+        # Table style
+        table_style = TableStyle([
             ('BACKGROUND', (0,0), (1,0), self.colors['background']),
             ('BACKGROUND', (0,-1), (1,-1), self.colors['background']),
             ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-            ('LEFTPADDING', (0,0), (-1,-1), 15),
-            ('RIGHTPADDING', (0,0), (-1,-1), 15),
-            ('TOPPADDING', (0,0), (-1,-1), 8),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+            ('LEFTPADDING', (0,0), (-1,-1), 10),
+            ('RIGHTPADDING', (0,0), (-1,-1), 10),
+            ('TOPPADDING', (0,0), (-1,-1), 6),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 6),
             ('BOX', (0,0), (-1,-1), 1, self.colors['border']),
             ('INNERGRID', (0,0), (-1,-1), 0.5, self.colors['border']),
-        ]))
+        ])
 
-        # Combine earnings and deductions
-        main_earnings_data = [
-            [earnings_table, deductions_table]
-        ]
+        # Reduce widths by 20%
+        earnings_table_widths = [60*0.85*mm, 50*0.85*mm]
+        deductions_table_widths = [60*0.85*mm, 50*0.85*mm]
 
-        main_earnings_table = Table(main_earnings_data, colWidths=[100*mm, 100*mm])
+        # Create individual tables
+        earnings_table = Table(earnings_data, colWidths=earnings_table_widths)
+        deductions_table = Table(deductions_data, colWidths=deductions_table_widths)
+        earnings_table.setStyle(table_style)
+        deductions_table.setStyle(table_style)
+
+        # Force both tables to same height dynamically
+        total_height = max(earnings_table.wrap(0,0)[1], deductions_table.wrap(0,0)[1])
+        row_height = total_height / max_rows
+        earnings_table._argH = [row_height] * max_rows
+        deductions_table._argH = [row_height] * max_rows
+
+        # Combine tables side by side with no gap
+        main_earnings_table = Table([[earnings_table, deductions_table]],
+                                    colWidths=[sum(earnings_table_widths), sum(deductions_table_widths)])
         main_earnings_table.setStyle(TableStyle([
             ('VALIGN', (0,0), (-1,-1), 'TOP'),
             ('LEFTPADDING', (0,0), (-1,-1), 0),
@@ -362,6 +381,7 @@ class ModernPayslipGenerator:
         ]))
 
         return main_earnings_table
+
 
     def create_total_net_payable_section(self, fin):
         """Create the total net payable section"""
