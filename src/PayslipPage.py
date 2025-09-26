@@ -37,18 +37,18 @@ class PayslipPage(QWidget):
         layout.setSpacing(24)
 
         # Page Header
-        header_layout = QHBoxLayout()
-        title = QLabel("📄 Payslip Management")
-        title.setStyleSheet("""
-            font-size: 24px;
-            font-weight: 700;
-            color: #1f2937;
-            margin-bottom: 8px;
-            padding: 0;
-        """)
-        header_layout.addWidget(title)
-        header_layout.addStretch()
-        layout.addLayout(header_layout)
+        # header_layout = QHBoxLayout()
+        # title = QLabel("📄 Payslip Management")
+        # title.setStyleSheet("""
+        #     font-size: 24px;
+        #     font-weight: 700;
+        #     color: #1f2937;
+        #     margin-bottom: 8px;
+        #     padding: 0;
+        # """)
+        # header_layout.addWidget(title)
+        # header_layout.addStretch()
+        # layout.addLayout(header_layout)
 
         # Main content in horizontal layout
         main_layout = QHBoxLayout()
@@ -165,10 +165,7 @@ class PayslipPage(QWidget):
         self.generate_btn.clicked.connect(self.generate_payslip)
         actions_layout.addWidget(self.generate_btn)
 
-        self.open_folder_btn = GlassButton("📁 Open Output Folder")
-        self.open_folder_btn.setMinimumHeight(44)
-        self.open_folder_btn.clicked.connect(self.open_output_folder)
-        actions_layout.addWidget(self.open_folder_btn)
+
 
         # Add some help text
         help_text = QLabel("💡 Select an employee above to preview their payslip details")
@@ -438,7 +435,10 @@ class PayslipPage(QWidget):
     # =========================
     # PDF Generation
     # =========================
+
     def generate_payslip(self):
+        desktop_dir = str(Path.home() / "Desktop")
+
         emp = self.current_employee()
         if not emp:
             QMessageBox.warning(self, "No Selection", "Please select an employee first.")
@@ -454,8 +454,9 @@ class PayslipPage(QWidget):
         pay_period = pay_period.strip()
 
         out_dir = QFileDialog.getExistingDirectory(
-            self, "Select Output Directory",
-            str(BASE_DIR / "output")
+            self,
+            "Select Output Directory",
+            desktop_dir  # open at Desktop
         )
         if not out_dir:
             return
