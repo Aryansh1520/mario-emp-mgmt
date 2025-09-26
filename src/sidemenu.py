@@ -1,13 +1,16 @@
 # modern_sidebar.py
-from PyQt6.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
+from PyQt6.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QLabel, QPushButton , QMessageBox
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QPixmap
 from pathlib import Path
-
+from os import sys
 HERE = Path(__file__).parent
-LOGO_PATH = HERE.parent / "assets" / "logo.png"
 
-
+if hasattr(sys, "_MEIPASS"):
+    LOGO_PATH = Path(sys._MEIPASS) / "assets" / "logo.png"
+else:
+    LOGO_PATH = HERE.parent / "assets" / "logo.png"
+    
 class SidebarButton(QPushButton):
     def __init__(self, text, parent=None):
         super().__init__(parent)
@@ -64,12 +67,26 @@ class ModernSidebar(QFrame):
         # Logo
         logo_label = QLabel()
         logo_pix = QPixmap(str(LOGO_PATH))
-        if not logo_pix.isNull():
-            logo_pix = logo_pix.scaled(40, 40, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-            logo_label.setPixmap(logo_pix)
+        if not LOGO_PATH.exists():
+            pass
+            #QMessageBox.warning(None, "Debug", f"Logo path does NOT exist:\n{LOGO_PATH}")
         else:
-            logo_label.setText("🏥")  # fallback emoji if logo not found
+            pass
+            #QMessageBox.information(None, "Debug", f"Logo path exists:\n{LOGO_PATH}")
+
+        if logo_pix.isNull():
+            #QMessageBox.warning(None, "Debug", f"Failed to load QPixmap from:\n{LOGO_PATH}")
+            logo_label.setText("🏥")  # fallback
             logo_label.setStyleSheet("font-size: 24px;")
+        else:
+            logo_pix = logo_pix.scaled(
+                40, 40,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation
+            )
+            logo_label.setPixmap(logo_pix)
+            #QMessageBox.information(None, "Debug", f"Successfully loaded QPixmap:\n{LOGO_PATH}")
+
 
         brand_layout.addWidget(logo_label)
 
